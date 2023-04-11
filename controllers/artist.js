@@ -73,7 +73,7 @@ const list = async (req, res) => {
       {
         page: page,
         limit: itemsPerPage,
-        sort: "name"
+        sort: "name",
       }
     );
 
@@ -91,9 +91,39 @@ const list = async (req, res) => {
   }
 };
 
+// Update artist in database
+const update = async (req, res) => {
+  const artistId = req.params.id;
+  let data = req.body;
+
+  try {
+    // Find and update artist
+    const updatedArtist = await Artist.findByIdAndUpdate(
+      artistId,
+      data,
+      { new: true }
+    );
+
+    // Response with success
+    return res.status(200).json({
+      status: "success",
+      message: "Artist updated successfully",
+      artistId: updatedArtist,
+    });
+  } catch (error) {
+    // Response with error message and error object
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to update artist",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   test,
   saveArtist,
   oneArtist,
   list,
+  update,
 };
