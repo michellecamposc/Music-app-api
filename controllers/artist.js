@@ -140,6 +140,7 @@ const remove = async (req, res) => {
       await album.remove();
     }
 
+
     // If artist doesn't exist
     if (artistRemoved.deletedCount === 0) {
       return res.status(404).send({
