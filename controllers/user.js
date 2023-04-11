@@ -145,7 +145,11 @@ const profile = async (req, res) => {
 
   try {
     // Find in database if the user exist
-    const userProfile = await User.findById(id, { password: 0, role: 0, email: 0 });
+    const userProfile = await User.findById(id, {
+      password: 0,
+      role: 0,
+      email: 0,
+    });
     if (!userProfile) {
       return res.status(404).send({
         status: "error",
@@ -224,11 +228,68 @@ const update = async (req, res) => {
   }
 };
 
+// Upload an image
+const upload = async (req, res) => {
+  // If an image has not been uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      status: "error",
+      message: "The request doesn't include the image",
+    });
+  }
+
+  // Know the file extension
+  let fileName = req.file.originalname;
+  const fileExtension = path.extname(fileName);
+
+  //Verify the file extension is an image
+  const isImage = mime.lookup(fileExtension).match(/^image\//);
+
+  if (!isImage) {
+    // Delete the file
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
+
+    return res.status(400).json({
+      status: "error",
+      message: "Only image files are allowed",
+    });
+  } else {
+    // Find and update the image
+    let updatedImage = await User.findOneAndUpdate(
+      { _id: req.user.id },
+      { image: req.file.filename },
+      { new: true }
+    );
+    try {
+      if (!updatedImage) {
+        return res.status(404).send({
+          status: "error",
+          message: "Failed to update",
+        });
+      }
+      return res.status(200).send({
+        status: "success",
+        user: updatedImage,
+        file: req.file,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: "error",
+        message: "Something went wrong!",
+      });
+    }
+  }
+};
 
 module.exports = {
   test,
   register,
   login,
   profile,
-  update
+  update,
+  upload,
 };
