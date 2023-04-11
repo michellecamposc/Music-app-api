@@ -1,8 +1,11 @@
-const Artist = require("../models/artist");
 const fs = require("fs");
 const path = require("path");
 const mime = require("mime");
 
+//Importing models
+const Artist = require("../models/artist");
+const Album = require("../models/album");
+const Song = require("../models/song");
 
 // Just for testing
 const test = (req, res) => {
@@ -129,9 +132,13 @@ const remove = async (req, res) => {
     // Find and delete the artist
     const artistRemoved = await Artist.findByIdAndDelete(artistId);
 
-    // Find and delete song
-
-    // Find and delete albums
+    // Find and delete the albums
+    const albumsRemoved = await Album.find({ artist: artistId });
+    for (const album of albumsRemoved) {
+      await album.remove();
+      // Find and delete the songs for this album
+      await Song.deleteMany({ album: album._id });
+    }
 
     // If artist doesn't exist
     if (artistRemoved.deletedCount === 0) {
@@ -145,6 +152,7 @@ const remove = async (req, res) => {
       status: "success",
       message: "Artist was deleted",
       artistRemoved,
+      albumsRemoved,
     });
   } catch (error) {
     console.log(error);
@@ -213,7 +221,7 @@ const upload = async (req, res) => {
   }
 };
 
-// Show the artist image
+// Show an image
 const image = async (req, res) => {
   const file = req.params.file;
   // Path of the image
@@ -239,5 +247,5 @@ module.exports = {
   update,
   remove,
   upload,
-  image
+  image,
 };
