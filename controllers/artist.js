@@ -98,11 +98,9 @@ const update = async (req, res) => {
 
   try {
     // Find and update artist
-    const updatedArtist = await Artist.findByIdAndUpdate(
-      artistId,
-      data,
-      { new: true }
-    );
+    const updatedArtist = await Artist.findByIdAndUpdate(artistId, data, {
+      new: true,
+    });
 
     // Response with success
     return res.status(200).json({
@@ -120,10 +118,44 @@ const update = async (req, res) => {
   }
 };
 
+// Delete an artist
+const remove = async (req, res) => {
+  const artistId = req.params.id;
+  try {
+    // Find and delete the artist
+    const artistRemoved = await Artist.findByIdAndDelete(artistId);
+
+    // Find and delete song
+
+    // Find and delete albums
+
+    // If artist doesn't exist
+    if (artistRemoved.deletedCount === 0) {
+      return res.status(404).send({
+        status: "error",
+        message: "Artist not found",
+      });
+    }
+    // Return the result
+    return res.status(200).send({
+      status: "success",
+      message: "Artist was deleted",
+      artistRemoved,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      status: "error",
+      message: "Error deleting artist",
+    });
+  }
+};
+
 module.exports = {
   test,
   saveArtist,
   oneArtist,
   list,
   update,
+  remove,
 };
