@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const mime = require("mime");
 const validate = require("../helpers/validate");
+const jwt = require("../helpers/jwt");
 
 // Import models
 const User = require("../models/user");
@@ -64,9 +65,15 @@ const register = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "User successfully registered",
-      user: userToSave,
+      user: {
+        name: userToSave.name,
+        nick: userToSave.nick,
+        email: userToSave.email,
+        image: userToSave.image,
+        created_at: userToSave.created_at,
+        _id: userToSave._id,
+      },
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({
@@ -77,7 +84,62 @@ const register = async (req, res) => {
   }
 };
 
+// Implement login with JWT token authentication
+const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send({
+      status: "error",
+      message: "Missing data to send",
+    });
+  }
+
+  try {
+    // Find in database if the user exist
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(404).send({
+        status: "error",
+        message: "User doesn't exist",
+      });
+    }
+
+    // Check password comparing
+    const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return res.status(400).send({
+        status: "error",
+        message: "You have not correctly identified",
+      });
+    }
+
+    // Return token
+    const token = jwt.createToken(user);
+
+    // Return user data
+    return res.status(200).send({
+      status: "success",
+      message: "you have identified yourself correctly",
+      user: {
+        id: user._id,
+        name: user.name,
+        nick: user.nick,
+      },
+      token,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   test,
   register,
+  login,
 };
