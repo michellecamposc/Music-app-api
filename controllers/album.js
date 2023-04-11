@@ -88,9 +88,38 @@ const list = async (req, res) => {
   }
 };
 
+// Update album in database
+const update = async (req, res) => {
+  const albumId = req.params.albumId;
+  let data = req.body;
+
+  try {
+    // Find and update album
+    const updatedAlbum = await Album.findByIdAndUpdate(albumId, data, {
+      new: true,
+    });
+
+    // Response with success
+    return res.status(200).json({
+      status: "success",
+      message: "Album updated successfully",
+      albumId: updatedAlbum,
+    });
+  } catch (error) {
+    // Response with error message and error object
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to update album",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   test,
   save,
   oneAlbum,
   list,
+  update
 };

@@ -8,7 +8,7 @@ router.get("/test", AlbumController.test);
 router.post("/save", check.auth, AlbumController.save);
 router.get("/one/:id", check.auth, AlbumController.oneAlbum);
 router.get("/list/:id", check.auth, AlbumController.list);
-
+router.put("/update/:albumId", check.auth, AlbumController.update);
 
 // Export router
 module.exports = router;
