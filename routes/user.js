@@ -1,9 +1,9 @@
 const express = require("express");
-const multer = require("multer");
 const router = express.Router();
 const UserController = require("../controllers/user");
 const check = require("../middlewares/auth");
 
+const multer = require("multer");
 // Storage config multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

@@ -1,4 +1,8 @@
 const Artist = require("../models/artist");
+const fs = require("fs");
+const path = require("path");
+const mime = require("mime");
+
 
 // Just for testing
 const test = (req, res) => {
@@ -151,6 +155,82 @@ const remove = async (req, res) => {
   }
 };
 
+// Upload an image
+const upload = async (req, res) => {
+  const artistId = req.params.id;
+  // If an image has not been uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      status: "error",
+      message: "The request doesn't include the image",
+    });
+  }
+
+  // Know the file extension
+  let fileName = req.file.originalname;
+  const fileExtension = path.extname(fileName);
+
+  //Verify the file extension is an image
+  const isImage = mime.lookup(fileExtension).match(/^image\//);
+
+  if (!isImage) {
+    // Delete the file
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
+
+    return res.status(400).json({
+      status: "error",
+      message: "Only image files are allowed",
+    });
+  } else {
+    // Find and update the artist image
+    let artistImageUpdated = await Artist.findOneAndUpdate(
+      { _id: artistId },
+      { image: req.file.filename },
+      { new: true }
+    );
+    try {
+      if (!artistImageUpdated) {
+        return res.status(404).send({
+          status: "error",
+          message: "Failed to update",
+        });
+      }
+      return res.status(200).send({
+        status: "success",
+        artist: artistImageUpdated,
+        file: req.file,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: "error",
+        message: "Something went wrong!",
+      });
+    }
+  }
+};
+
+// Show the artist image
+const image = async (req, res) => {
+  const file = req.params.file;
+  // Path of the image
+  const filePath = path.resolve(`./uploads/artists/${file}`);
+
+  // Check if exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send({
+      status: "error",
+      message: "The image doesn't exist",
+    });
+  }
+
+  // Return the file
+  return res.status(200).sendFile(filePath);
+};
+
 module.exports = {
   test,
   saveArtist,
@@ -158,4 +238,6 @@ module.exports = {
   list,
   update,
   remove,
+  upload,
+  image
 };
