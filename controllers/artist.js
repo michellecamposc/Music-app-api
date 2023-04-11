@@ -135,9 +135,9 @@ const remove = async (req, res) => {
     // Find and delete the albums
     const albumsRemoved = await Album.find({ artist: artistId });
     for (const album of albumsRemoved) {
-      await album.remove();
       // Find and delete the songs for this album
       await Song.deleteMany({ album: album._id });
+      await album.remove();
     }
 
     // If artist doesn't exist
