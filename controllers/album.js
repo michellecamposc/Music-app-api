@@ -1,3 +1,8 @@
+const fs = require("fs");
+const path = require("path");
+const mime = require("mime");
+
+// Exporting model
 const Album = require("../models/album");
 
 // Just for testing
@@ -63,7 +68,7 @@ const oneAlbum = async (req, res) => {
 
 // Album list
 const list = async (req, res) => {
-  const artistId = req.params.id;
+  const albumId = req.params.id;
 
   if (!artistId) {
     return res.status(404).send({
@@ -115,11 +120,88 @@ const update = async (req, res) => {
   }
 };
 
+// Upload an image
+const upload = async (req, res) => {
+  const albumId = req.params.id;
+  // If an image has not been uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      status: "error",
+      message: "The request doesn't include the image",
+    });
+  }
+
+  // Know the file extension
+  let fileName = req.file.originalname;
+  const fileExtension = path.extname(fileName);
+
+  //Verify the file extension is an image
+  const isImage = mime.lookup(fileExtension).match(/^image\//);
+
+  if (!isImage) {
+    // Delete the file
+    fs.unlink(req.file.path, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
+
+    return res.status(400).json({
+      status: "error",
+      message: "Only image files are allowed",
+    });
+  } else {
+    // Find and update the album image
+    let albumImageUpdated = await Album.findOneAndUpdate(
+      { _id: albumId },
+      { image: req.file.filename },
+      { new: true }
+    );
+    try {
+      if (!albumImageUpdated) {
+        return res.status(404).send({
+          status: "error",
+          message: "Failed to update",
+        });
+      }
+      return res.status(200).send({
+        status: "success",
+        album: albumImageUpdated,
+        file: req.file,
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: "error",
+        message: "Something went wrong!",
+      });
+    }
+  }
+};
+
+// Show an image
+const image = async (req, res) => {
+  const file = req.params.file;
+  // Path of the image
+  const filePath = path.resolve(`./uploads/albums/${file}`);
+
+  // Check if exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send({
+      status: "error",
+      message: "The image doesn't exist",
+    });
+  }
+
+  // Return the file
+  return res.status(200).sendFile(filePath);
+};
 
 module.exports = {
   test,
   save,
   oneAlbum,
   list,
-  update
+  update,
+  upload,
+  image,
 };
